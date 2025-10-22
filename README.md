@@ -1,2 +1,2 @@
-# Jogos Da Mamãe
+# JogosDaMamae
 Jogos para minha mãe
