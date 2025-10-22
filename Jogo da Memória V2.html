@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Memória Passa-e-Joga (NUMEROS/LETRAS)</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3F51B5">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <style>
+        /* --- ESTILOS CSS - CARTOON THEME --- */
+
+       body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #A7E0FF; 
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 450px; 
+            margin: 30px auto;
+            padding: 25px 20px;
+            background-color: #FFFDE7;
+            border-radius: 20px;
+            border: 5px solid #E91E63;
+            box-shadow: 8px 8px 0px 0px #F44336;
+            text-align: center;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px #333;
+        }
+
+        h2 {
+            color: #3F51B5;
+            margin-top: 0;
+            text-shadow: 1px 1px #fff;
+        }
+
+        .subtitle {
+            color: #000;
+            margin-bottom: 25px;
+        }
+
+        .oculto {
+            display: none !important;
+        }
+
+        /* Botões */
+        .botao {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 3px solid #333;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 4px 4px 0px 0px #333;
+        }
+
+        .principal {
+            background-color: #FFEB3B;
+            color: #333;
+        }
+
+        .secundario {
+            background-color: #9E9E9E;
+            color: #333;
+        }
+        
+        .botao:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px #333;
+        }
+        
+        .botao:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px 0px #333;
+        }
+
+        .botao:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 4px 4px 0px 0px #333;
+        }
+
+        /* Input de Nome e Número de Jogadores */
+        .input-campo {
+            width: calc(100% - 24px);
+            padding: 12px;
+            margin: 10px 0 20px;
+            border: 3px solid #333;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 1em;
+            background-color: white;
+        }
+
+        .opcoes-jogo {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .opcoes-jogo button {
+            flex: 1;
+            margin: 0;
+        }
+
+        
+        /* Dashboard do Jogo */
+        .dashboard-jogo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background-color: #F44336;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 3px solid #333;
+        }
+        
+        #jogador-ativo-display {
+            grid-column: span 2;
+            background-color: #3F51B5;
+            padding: 5px;
+            border-radius: 5px;
+            text-shadow: 1px 1px #000;
+        }
+        
+        /* Tabuleiro do Jogo */
+        .board-jogo {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 8px;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #FFE082;
+            border-radius: 15px;
+            border: 4px solid #F44336;
+        }
+        
+        .board-jogo.colunas-5 {
+            grid-template-columns: repeat(5, 1fr); 
+        }
+
+        /* --- Estilos da Carta --- */
+        .card {
+            background-color: transparent; 
+            height: 70px; 
+            perspective: 1000px;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .card.flip {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            box-sizing: border-box;
+            box-shadow: 4px 4px 0px 0px #333;
+            overflow: hidden; 
+        }
+
+        .card-back {
+            background: #3F51B5; /* Verso da carta */
+            color: white;
+            font-size: 2em;
+            transform: rotateY(0deg); 
+            border: 3px solid #333; 
+        }
+
+        .card-front {
+            background: white; 
+            transform: rotateY(180deg); 
+            border: 3px solid #E91E63; 
+            font-weight: bold;
+            color: #333; 
+            padding: 5px;
+            text-align: center;
+        }
+        
+        /* Ajuste de fonte para cada modo */
+        .card-front.modo-letras { font-size: 2.5em; }
+        .card-front.modo-numeros { font-size: 1.5em; } 
+        
+        /* --- NOVO: Estilo para o Alerta PWA --- */
+        .pwa-prompt {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #4CAF50; /* Fundo verde */
+            color: white;
+            padding: 10px 15px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pwa-prompt p {
+            margin: 0;
+            font-weight: bold;
+            flex-grow: 1;
+            text-align: left;
+        }
+
+        .pwa-prompt .botao {
+            width: auto;
+            margin: 0 10px;
+            padding: 5px 15px;
+            font-size: 0.9em;
+            box-shadow: 2px 2px 0px 0px #333;
+        }
+
+        .pwa-close-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        /* --- FIM Estilo para o Alerta PWA --- */
+    </style>
+</head>
+<body>
+
+    <div id="pwa-prompt" class="pwa-prompt oculto">
+        <p>🚀 Instale o Jogo da Memória como App!</p>
+        <button id="pwa-install-button" class="botao principal">Instalar</button>
+        <button id="pwa-close-button" class="pwa-close-btn">X</button>
+    </div>
+    <div class="container" id="tela-login">
+        <h1>Jogo da Memória!</h1>
+        <p class="subtitle">Desafie sua mente e encontre os pares!</p>
+
+        <div class="botoes-login">
+            <button id="btn-iniciar-jogo" class="botao principal">Iniciar Jogo</button>
+            <button id="btn-ranking" class="botao principal">Visualizar Ranking</button>
+<br>
+ <p class="subtitle">Desenvolvido para minha mãe, Rozete da Costa!</p>
+
+        </div>
+    </div>
+
+    <div class="container oculto" id="tela-nome-jogador">
+        <h2>Seja Bem-Vindo(a)!</h2>
+        <label for="nome-jogador">Nome (Jog. 1):</label>
+        <input type="text" id="nome-jogador" class="input-campo" placeholder="Seu nome divertido">
+        
+        <div class="opcoes-jogo">
+            <button id="btn-modo-individual" class="botao principal">Individual (1 Jogador)</button>
+            <button id="btn-modo-multiplayer" class="botao principal">Multiplayer (Passa-e-Joga)</button>
+        </div>
+        
+        <button id="btn-voltar-login-nome" class="botao secundario">Voltar ao Início</button>
+    </div>
+    
+    <div class="container oculto" id="tela-selecao-multiplayer">
+        <h2>Multiplayer Cooperativo</h2>
+        <p>Informe o nome dos participantes:</p>
+        <div id="nomes-multiplayer-container">
+            <input type="text" class="input-campo nome-participante" placeholder="Nome Jogador 1 (Host)" value="" disabled>
+            <input type="text" class="input-campo nome-participante" placeholder="Nome Jogador 2">
+        </div>
+
+        <div class="opcoes-jogo" style="margin-top: -10px;">
+             <button id="btn-add-jogador" class="botao secundario" style="flex: 0 0 45%; margin-right: 5%;">+ Jogador</button>
+             <button id="btn-rem-jogador" class="botao secundario" style="flex: 0 0 45%;"> - Jogador</button>
+        </div>
+        
+        <button id="btn-confirmar-multiplayer" class="botao principal">Continuar</button>
+        <button id="btn-voltar-nome-multiplayer" class="botao secundario">Voltar</button>
+        
+        <p style="color: #F44336; font-weight: bold; margin-top: 15px;">
+            *Este modo é de **Passa-e-Joga** no mesmo dispositivo, não é online/rede.
+        </p>
+    </div>
+
+    <div class="container oculto" id="tela-selecao-modo">
+        <h2>Escolha o Tema de Jogo</h2>
+        <div class="botoes-modos">
+            <button class="botao principal modo-jogo" data-modo="numeros">Números Aleatórios #️⃣</button>
+            <button class="botao principal modo-jogo" data-modo="letras">Letras do Alfabeto 🅰️</button>
+            <button class="botao principal modo-jogo" data-modo="cores">Cores Vivas 🎨</button>
+        </div>
+        <button id="btn-voltar-tema-config" class="botao secundario voltar-btn">Voltar</button>
+    </div>
+
+    <div class="container oculto" id="tela-jogo">
+        <h2>Modo: <span id="modo-atual"></span></h2>
+        
+        <div class="dashboard-jogo">
+            <div id="jogador-ativo-display" class="dashboard-item">Vez de: JOGADOR 1</div>
+            <div class="dashboard-item"><span id="cronometro">00:00</span><span class="item-label">Tempo</span></div>
+            <div class="dashboard-item"><span id="pontuacao-display">0</span><span class="item-label">Pontos</span></div>
+        </div>
+        
+        <div id="board-jogo" class="board-jogo">
+            </div>
+        
+        <p id="parabens" class="parabens oculto">🎉 Parabéns, Vencedor(a)! 🎉</p>
+
+        <div class="botoes-partida" id="botoes-jogo-ativos">
+            <button id="btn-reiniciar-jogo" class="botao principal">Reiniciar</button>
+            <button id="btn-voltar-inicio-partida" class="botao secundario">Sair (Início)</button>
+        </div>
+
+        <div class="botoes-partida oculto" id="botoes-final-partida">
+             <button id="btn-final-novo-jogo" class="botao principal">Jogar Novamente</button>
+             <button id="btn-final-ver-ranking" class="botao secundario">Ver Ranking</button>
+        </div>
+        <button id="btn-final-mudar-tema" class="botao principal oculto">Voltar à Seleção</button>
+    </div>
+
+    <div class="container oculto" id="tela-ranking">
+        <h2>Ranking dos Vencedores</h2>
+        <div class="ranking-filtros">
+            <button class="botao principal filtro-ranking" data-filtro="tempo">Melhor Tempo</button>
+            <button class="botao secundario filtro-ranking" data-filtro="pontos">Maior Pontuação</button>
+        </div>
+        
+        <ul id="ranking-lista">
+            </ul>
+        <button id="btn-voltar-login-ranking" class="botao principal">Voltar ao Início</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+// --- NOVO: REGISTRO DO SERVICE WORKER ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registrado com sucesso:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Falha no registro do Service Worker:', error);
+                    });
+            });
+        }
+        // --- FIM REGISTRO SERVICE WORKER ---
+
+            // --- Referências de Telas e Elementos (mantidas) ---
+            const telaLogin = document.getElementById('tela-login');
+            const telaNomeJogador = document.getElementById('tela-nome-jogador');
+            const telaSelecaoMultiplayer = document.getElementById('tela-selecao-multiplayer');
+            const telaSelecaoModo = document.getElementById('tela-selecao-modo');
+            const telaJogo = document.getElementById('tela-jogo');
+            const telaRanking = document.getElementById('tela-ranking');
+
+            const boardJogo = document.getElementById('board-jogo');
+            const inputNome = document.getElementById('nome-jogador');
+            const nomesMultiplayerContainer = document.getElementById('nomes-multiplayer-container');
+            const modoAtualSpan = document.getElementById('modo-atual');
+            const mensagemParabens = document.getElementById('parabens');
+            const botoesFinalPartida = document.getElementById('botoes-final-partida');
+            const botoesJogoAtivos = document.getElementById('botoes-jogo-ativos');
+            const btnFinalMudarTema = document.getElementById('btn-final-mudar-tema');
+            
+            const cronometroDisplay = document.getElementById('cronometro');
+            const pontuacaoDisplay = document.getElementById('pontuacao-display');
+            const jogadorAtivoDisplay = document.getElementById('jogador-ativo-display');
+
+            // --- PWA Variáveis ---
+            let deferredPrompt; 
+            const pwaPrompt = document.getElementById('pwa-prompt');
+            const pwaInstallButton = document.getElementById('pwa-install-button');
+            const pwaCloseButton = document.getElementById('pwa-close-button');
+
+            // Captura o evento beforeinstallprompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                pwaPrompt.classList.remove('oculto');
+            });
+            
+            // Lógica do botão de instalação
+            pwaInstallButton.addEventListener('click', (e) => {
+                pwaPrompt.classList.add('oculto'); 
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('Usuário aceitou a instalação do PWA');
+                        } else {
+                            console.log('Usuário rejeitou a instalação do PWA');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            });
+
+            // Lógica do botão de fechar o banner
+            pwaCloseButton.addEventListener('click', () => {
+                 pwaPrompt.classList.add('oculto');
+            });
+            
+            // --- Variáveis de Estado (mantidas) ---
+            let nomeJogador = localStorage.getItem('nomeJogador') || ''; 
+            let modoJogo = '';
+            let tipoJogo = 'individual'; 
+            let nomesParticipantes = []; 
+            let indiceJogadorAtual = 0; 
+            
+            let cartasViradas = [];
+            let bloqueioBoard = false;
+            let paresEncontrados = 0;
+            let pontuacao = 0;
+            let tempoTotalSegundos = 0;
+            let cronometroInterval; 
+            let TOTAL_PARES_ATUAL = 8; 
+
+            // --- Dados dos Modos de Jogo (ATUALIZADOS) ---
+            const CORES_BASICAS = ['#FFCDD2', '#90CAF9', '#A5D6A7', '#FFF59D', '#CE93D8', '#FFCC80', '#F48FB1', '#80CBC4', '#C5E1A5', '#7986CB', '#FFAB91', '#80DEEA'];
+            const LETRAS_ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+            const MODOS = {
+                cores: CORES_BASICAS,
+                letras: LETRAS_ALFABETO,
+                // O modo 'numeros' é gerado dinamicamente
+            };
+            
+            // --- Funções Auxiliares (mantidas) ---
+            function mostrarTela(telaParaMostrar) {
+                [telaLogin, telaNomeJogador, telaSelecaoMultiplayer, telaSelecaoModo, telaJogo, telaRanking].forEach(tela => {
+                    tela.classList.add('oculto');
+                });
+                telaParaMostrar.classList.remove('oculto');
+                pararCronometro();
+            }
+            function embaralhar(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            function formatarTempo(segundos) {
+                const min = String(Math.floor(segundos / 60)).padStart(2, '0');
+                const sec = String(segundos % 60).padStart(2, '0');
+                return `${min}:${sec}`;
+            }
+            function iniciarCronometro() {
+                tempoTotalSegundos = 0;
+                cronometroDisplay.textContent = formatarTempo(tempoTotalSegundos);
+                clearInterval(cronometroInterval);
+                cronometroInterval = setInterval(() => {
+                    tempoTotalSegundos++;
+                    cronometroDisplay.textContent = formatarTempo(tempoTotalSegundos);
+                }, 1000);
+            }
+            function pararCronometro() { clearInterval(cronometroInterval); }
+            function atualizarPontuacao(pontos) {
+                pontuacao += pontos;
+                pontuacao = Math.max(0, pontuacao);
+                pontuacaoDisplay.textContent = pontuacao;
+            }
+            function avancarTurno(acerto) {
+                if (tipoJogo === 'individual' || acerto) { return; }
+                indiceJogadorAtual = (indiceJogadorAtual + 1) % nomesParticipantes.length;
+                jogadorAtivoDisplay.textContent = `Vez de: ${nomesParticipantes[indiceJogadorAtual]}`;
+            }
+            function atualizarDisplayJogadorAtivo() {
+                 jogadorAtivoDisplay.classList.toggle('oculto', tipoJogo === 'individual');
+                 if (tipoJogo === 'multiplayer' && nomesParticipantes.length > 0) {
+                     jogadorAtivoDisplay.textContent = `Vez de: ${nomesParticipantes[indiceJogadorAtual]}`;
+                 }
+            }
+            function carregarRanking() {
+                const rankingString = localStorage.getItem('rankingMemoria');
+                return rankingString ? JSON.parse(rankingString) : [];
+            }
+            function salvarResultado(resultado) {
+                const ranking = carregarRanking();
+                ranking.push(resultado);
+                localStorage.setItem('rankingMemoria', JSON.stringify(ranking));
+            }
+            function mostrarRanking(filtro) {
+                const ranking = carregarRanking();
+                let rankingFiltrado = [...ranking];
+
+                if (filtro === 'tempo') { rankingFiltrado.sort((a, b) => a.tempo - b.tempo); } 
+                else if (filtro === 'pontos') { rankingFiltrado.sort((a, b) => b.pontos - a.pontos); }
+                
+                rankingFiltrado = rankingFiltrado.slice(0, 10);
+                document.getElementById('ranking-lista').innerHTML = '';
+                
+                if (rankingFiltrado.length === 0) {
+                    document.getElementById('ranking-lista').innerHTML = '<li>Nenhum resultado ainda! Jogue para ser o primeiro.</li>';
+                    return;
+                }
+                
+                rankingFiltrado.forEach((item, index) => {
+                    const li = document.createElement('li');
+                    const nomeExibido = item.tipoJogo === 'multiplayer' 
+                                       ? item.nomesParticipantes.join(', ')
+                                       : item.nome;
+                    const tipo = item.tipoJogo === 'multiplayer' ? `COOP (${item.jogadores}P)` : 'IND';
+                    
+                    li.innerHTML = `
+                        <span>${index + 1}. ${nomeExibido} (${tipo})</span>
+                        <span class="ranking-detail">${filtro === 'tempo' ? formatarTempo(item.tempo) : `${item.pontos} Pts`}</span>
+                    `;
+                    document.getElementById('ranking-lista').appendChild(li);
+                });
+                
+                document.querySelectorAll('.filtro-ranking').forEach(btn => {
+                    if (btn.dataset.filtro === filtro) { btn.classList.replace('secundario', 'principal'); } 
+                    else { btn.classList.replace('principal', 'secundario'); }
+                });
+            }
+            document.querySelectorAll('.filtro-ranking').forEach(button => {
+                button.addEventListener('click', (e) => { mostrarRanking(e.target.dataset.filtro); });
+            });
+            function renderizarInputsNomes() {
+                nomesMultiplayerContainer.innerHTML = '';
+                const nomeHost = inputNome.value.trim() || 'Jogador 1';
+                nomesParticipantes = [nomeHost]; 
+                let inputHost = document.createElement('input');
+                inputHost.type = 'text'; inputHost.className = 'input-campo nome-participante';
+                inputHost.placeholder = 'Nome Jogador 1 (Host)'; inputHost.value = nomeHost;
+                inputHost.disabled = true; nomesMultiplayerContainer.appendChild(inputHost);
+                adicionarInputNome(2); 
+            }
+            function adicionarInputNome(num) {
+                const numJogadoresAtuais = nomesMultiplayerContainer.querySelectorAll('.nome-participante').length;
+                if (numJogadoresAtuais >= 6) { alert('Limite de 6 jogadores atingido.'); return; }
+                const index = num || numJogadoresAtuais + 1;
+                let input = document.createElement('input');
+                input.type = 'text'; input.className = 'input-campo nome-participante';
+                input.placeholder = `Nome Jogador ${index}`;
+                nomesMultiplayerContainer.appendChild(input);
+            }
+            document.getElementById('btn-add-jogador').addEventListener('click', () => adicionarInputNome());
+            document.getElementById('btn-rem-jogador').addEventListener('click', () => {
+                const inputs = nomesMultiplayerContainer.querySelectorAll('.nome-participante');
+                if (inputs.length > 2) { nomesMultiplayerContainer.removeChild(inputs[inputs.length - 1]); }
+            });
+            document.getElementById('btn-iniciar-jogo').addEventListener('click', () => { if (nomeJogador) { inputNome.value = nomeJogador; } mostrarTela(telaNomeJogador); });
+            document.getElementById('btn-ranking').addEventListener('click', () => { mostrarRanking('tempo'); mostrarTela(telaRanking); });
+            document.getElementById('btn-voltar-login-ranking').addEventListener('click', () => { mostrarTela(telaLogin); });
+            document.getElementById('btn-voltar-login-nome').addEventListener('click', () => { mostrarTela(telaLogin); });
+            document.getElementById('btn-modo-individual').addEventListener('click', () => {
+                const nome = inputNome.value.trim();
+                if (nome) {
+                    nomeJogador = nome; localStorage.setItem('nomeJogador', nomeJogador);
+                    tipoJogo = 'individual'; nomesParticipantes = [nome];
+                    mostrarTela(telaSelecaoModo);
+                } else { alert('Por favor, digite seu nome.'); }
+            });
+            document.getElementById('btn-modo-multiplayer').addEventListener('click', () => {
+                renderizarInputsNomes(); tipoJogo = 'multiplayer'; mostrarTela(telaSelecaoMultiplayer);
+            });
+            document.getElementById('btn-voltar-nome-multiplayer').addEventListener('click', () => { mostrarTela(telaNomeJogador); });
+            document.getElementById('btn-confirmar-multiplayer').addEventListener('click', () => {
+                const inputs = nomesMultiplayerContainer.querySelectorAll('.nome-participante');
+                let nomes = []; let valido = true;
+                inputs.forEach(input => { const nome = input.value.trim(); if (nome === '') { valido = false; } nomes.push(nome); });
+                if (!valido) { alert('Todos os jogadores devem ter um nome.'); return; }
+                nomesParticipantes = nomes;
+                nomeJogador = nomes[0]; localStorage.setItem('nomeJogador', nomeJogador);
+                mostrarTela(telaSelecaoModo);
+            });
+            document.getElementById('btn-voltar-tema-config').addEventListener('click', () => {
+                if (tipoJogo === 'individual') { mostrarTela(telaNomeJogador); } 
+                else { mostrarTela(telaSelecaoMultiplayer); }
+            });
+            document.querySelectorAll('.modo-jogo').forEach(button => {
+                button.addEventListener('click', (e) => { modoJogo = e.target.dataset.modo; iniciarJogo(modoJogo); });
+            });
+            document.getElementById('btn-reiniciar-jogo').addEventListener('click', () => { iniciarJogo(modoJogo); });
+            document.getElementById('btn-voltar-inicio-partida').addEventListener('click', () => { mostrarTela(telaLogin); });
+            document.getElementById('btn-final-novo-jogo').addEventListener('click', () => { iniciarJogo(modoJogo); });
+            document.getElementById('btn-final-ver-ranking').addEventListener('click', () => { mostrarRanking('tempo'); mostrarTela(telaRanking); });
+            document.getElementById('btn-final-mudar-tema').addEventListener('click', () => { mostrarTela(telaSelecaoModo); });
+
+
+            // --- Lógica do Jogo Principal ---
+
+            function definirTotalPares(jogadores) {
+                if (jogadores === 1) return 8; 
+                if (jogadores === 2) return 16; 
+                return 20; 
+            }
+            
+            // FUNÇÃO AUXILIAR: Geração de Números
+            function gerarNumerosAleatorios(totalPares) {
+                const numeros = new Set();
+                while (numeros.size < totalPares) {
+                    // Gera número aleatório entre 0 e 999
+                    const num = Math.floor(Math.random() * 1000); 
+                    // Garante que o número tenha 3 dígitos para manter o layout uniforme
+                    numeros.add(String(num).padStart(3, '0')); 
+                }
+                return Array.from(numeros);
+            }
+
+            function iniciarJogo(modo) {
+                mostrarTela(telaJogo);
+                pararCronometro(); 
+
+                const numJogadores = nomesParticipantes.length;
+                TOTAL_PARES_ATUAL = definirTotalPares(numJogadores);
+
+                modoAtualSpan.textContent = `${modo.charAt(0).toUpperCase() + modo.slice(1)} (${tipoJogo === 'multiplayer' ? numJogadores + 'x COOP' : 'Individual'})`;
+                
+                indiceJogadorAtual = 0;
+                atualizarDisplayJogadorAtivo(); 
+
+                boardJogo.innerHTML = '';
+                mensagemParabens.classList.add('oculto');
+                botoesFinalPartida.classList.add('oculto');
+                btnFinalMudarTema.classList.add('oculto');
+                botoesJogoAtivos.classList.remove('oculto');
+                
+                cartasViradas = [];
+                bloqueioBoard = false;
+                paresEncontrados = 0;
+                pontuacao = 0;
+                atualizarPontuacao(0); 
+                iniciarCronometro();
+
+                boardJogo.classList.toggle('colunas-5', TOTAL_PARES_ATUAL > 8);
+
+                let cartas;
+                if (modo === 'numeros') {
+                    // GERAÇÃO DINÂMICA DE NÚMEROS
+                    cartas = gerarNumerosAleatorios(TOTAL_PARES_ATUAL);
+                } else if (MODOS[modo]) {
+                    // USA OS DADOS PRÉ-DEFINIDOS (CORES ou LETRAS)
+                    cartas = MODOS[modo].slice(0, TOTAL_PARES_ATUAL);
+                } else {
+                    console.error('Modo de jogo inválido');
+                    return;
+                }
+                
+                let arrayJogo = [...cartas, ...cartas]; 
+                arrayJogo = embaralhar(arrayJogo);
+
+                arrayJogo.forEach(item => {
+                    const cardElement = document.createElement('div');
+                    cardElement.classList.add('card');
+                    cardElement.dataset.item = item;
+
+                    const cardFront = document.createElement('div');
+                    cardFront.classList.add('card-face', 'card-front');
+                    cardFront.classList.remove('modo-letras', 'modo-numeros'); // Limpa classes antigas
+                    
+                    if (modo === 'cores') {
+                        cardFront.style.backgroundColor = item;
+                        cardFront.style.fontSize = '1em'; // Volta para o tamanho padrão
+                        cardFront.textContent = ''; // Cores não tem texto
+                    } else {
+                        // Modo Números ou Letras:
+                        cardFront.style.backgroundColor = 'white'; 
+                        cardFront.textContent = item;
+                        
+                        // Adiciona classes para ajustes de fonte no CSS
+                        if (modo === 'letras') {
+                            cardFront.classList.add('modo-letras');
+                        } else if (modo === 'numeros') {
+                            cardFront.classList.add('modo-numeros');
+                        }
+                    }
+
+                    const cardBack = document.createElement('div');
+                    cardBack.classList.add('card-face', 'card-back');
+                    cardBack.innerHTML = '❓';
+
+                    cardElement.appendChild(cardFront);
+                    cardElement.appendChild(cardBack);
+                    cardElement.addEventListener('click', virarCarta);
+                    boardJogo.appendChild(cardElement);
+                });
+            }
+
+            function virarCarta(e) {
+                const carta = e.currentTarget;
+                if (bloqueioBoard || carta === cartasViradas[0] || carta.classList.contains('flip') || carta.classList.contains('matched')) return;
+
+                carta.classList.add('flip');
+                cartasViradas.push(carta);
+
+                if (cartasViradas.length === 2) {
+                    bloqueioBoard = true;
+                    verificarPar();
+                }
+            }
+
+            function verificarPar() {
+                const [carta1, carta2] = cartasViradas;
+                const item1 = carta1.dataset.item;
+                const item2 = carta2.dataset.item;
+
+                if (item1 === item2) {
+                    atualizarPontuacao(3);
+                    setTimeout(() => {
+                        carta1.classList.add('matched');
+                        carta2.classList.add('matched');
+                        resetarCartasViradas();
+                        paresEncontrados++;
+                        if (paresEncontrados === TOTAL_PARES_ATUAL) { 
+                            finalizarJogo();
+                        }
+                        avancarTurno(true); 
+                    }, 600);
+                } else {
+                    atualizarPontuacao(-1);
+                    setTimeout(() => {
+                        carta1.classList.remove('flip');
+                        carta2.classList.remove('flip');
+                        resetarCartasViradas();
+                        avancarTurno(false); 
+                    }, 1000);
+                }
+            }
+
+            function resetarCartasViradas() {
+                [cartasViradas, bloqueioBoard] = [[], false];
+            }
+
+            function finalizarJogo() {
+                pararCronometro();
+                
+                botoesJogoAtivos.classList.add('oculto');
+                mensagemParabens.classList.remove('oculto');
+                botoesFinalPartida.classList.remove('oculto');
+                btnFinalMudarTema.classList.remove('oculto'); 
+                jogadorAtivoDisplay.classList.add('oculto');
+
+                const nomeVencedor = tipoJogo === 'multiplayer' ? 'Equipe' : nomeJogador;
+
+                mensagemParabens.textContent = `🎉 Parabéns, ${nomeVencedor}! Você Venceu com ${pontuacao} pontos em ${formatarTempo(tempoTotalSegundos)}! 🎉`;
+                
+                const resultado = {
+                    nome: nomeJogador,
+                    modo: modoJogo,
+                    pontos: pontuacao,
+                    tempo: tempoTotalSegundos,
+                    tipoJogo: tipoJogo,
+                    jogadores: nomesParticipantes.length,
+                    nomesParticipantes: nomesParticipantes,
+                    data: new Date().toISOString()
+                };
+                salvarResultado(resultado);
+            }
+
+            mostrarTela(telaLogin);
+        });
+    </script>
+</body>
+</html>
